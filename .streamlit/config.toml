@@ -1,0 +1,16 @@
+# Hardened Streamlit configuration.
+# Place this file at .streamlit/config.toml in the repo root.
+
+[server]
+headless = true
+enableCORS = false            # with XSRF on, keep cross-origin off
+enableXsrfProtection = true   # protect against cross-site request forgery
+maxUploadSize = 15            # MB; payroll files are tiny, cap abuse
+maxMessageSize = 50           # MB
+
+[browser]
+gatherUsageStats = false      # do not phone home with usage telemetry
+
+[client]
+showErrorDetails = false      # never leak stack traces / data to the browser
+toolbarMode = "minimal"
