@@ -86,20 +86,27 @@ st.set_page_config(page_title="Payslip Generator", page_icon="🧾", layout="wid
 def check_password() -> bool:
     """Return True if access is allowed.
 
-    If no APP_PASSWORD secret is set, the gate is disabled and the app
-    relies entirely on platform-level access control (recommended).
+    Supports two Secrets formats:
+      * A [passwords] table of username = "password" pairs (per-user login).
+      * A single APP_PASSWORD = "..." (shared password, no username).
+    If neither is set, the gate is open and a warning is shown.
     """
     try:
-        configured = st.secrets.get("APP_PASSWORD", None)
+        pw_table = dict(st.secrets.get("passwords", {}))
     except Exception:
-        configured = None
+        pw_table = {}
+    try:
+        single = st.secrets.get("APP_PASSWORD", None)
+    except Exception:
+        single = None
 
-    if not configured:
+    if not pw_table and not single:
         # On a public deployment this means anyone with the link can use the
-        # tool. Warn loudly; setting APP_PASSWORD in Secrets removes this.
+        # tool. Warn loudly; adding credentials in Secrets removes this.
         st.warning(
-            "No APP_PASSWORD is set, so anyone with the link can use this app. "
-            "Add APP_PASSWORD in the app's Secrets to restrict access.",
+            "No credentials are set, so anyone with the link can use this app. "
+            "Add a [passwords] section (or APP_PASSWORD) in the app's Secrets "
+            "to restrict access.",
             icon="⚠️")
         return True
 
@@ -108,15 +115,25 @@ def check_password() -> bool:
 
     st.markdown("#### Restricted tool")
     with st.form("login", clear_on_submit=True):
+        username = st.text_input("Username") if pw_table else ""
         pw = st.text_input("Password", type="password")
         submitted = st.form_submit_button("Enter")
     if submitted:
-        # Constant-time comparison to avoid timing side-channels.
-        if hmac.compare_digest(str(pw), str(configured)):
+        ok = False
+        if pw_table:
+            expected = pw_table.get(username.strip())
+            # Constant-time comparison to avoid timing side-channels.
+            ok = expected is not None and hmac.compare_digest(
+                str(pw), str(expected))
+        elif single is not None:
+            ok = hmac.compare_digest(str(pw), str(single))
+        if ok:
             st.session_state["auth_ok"] = True
+            st.session_state["auth_user"] = username.strip() or "user"
             st.rerun()
         else:
-            st.error("Incorrect password.")
+            st.error("Incorrect username or password." if pw_table
+                     else "Incorrect password.")
     return False
 
 
