@@ -1,0 +1,16 @@
+# Never commit secrets
+.streamlit/secrets.toml
+
+# Never commit real salary data (safety net). The fake sample is whitelisted.
+*.xlsx
+*.xls
+*.csv
+*.tsv
+!sample_salaries.xlsx
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.DS_Store

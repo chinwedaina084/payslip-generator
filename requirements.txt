@@ -1,0 +1,5 @@
+# Pin exact versions after your first successful deploy with: pip freeze > requirements.txt
+streamlit>=1.40
+pandas>=2.2
+reportlab>=4.2
+openpyxl>=3.1
